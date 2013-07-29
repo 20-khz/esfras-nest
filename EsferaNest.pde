@@ -1,90 +1,102 @@
 /**
+ * Modified from a sketch by David Pena. 
  * Esfera
  * by David Pena.  
- * 
- * Distribucion aleatoria uniforme sobre la superficie de una esfera. 
+ *  
  */
+import ddf.minim.*;
 
-int cuantos = 16000;
-Pelo[] lista ;
-float radio = 100;
-float rx = 0;
-float ry =0;
+Minim minim;
+AudioInput in;
 
-void setup() {
+int count = 16000;
+Strand[] strands ;
+float radius = 100;
+float rx;
+float ry;
+float rotationX = 0;
+float rotationY = 0;
+
+void setup() 
+{
   size(1024, 768, P3D);
-
-  radio = height/3.5;
-
-  lista = new Pelo[cuantos];
-  for (int i = 0; i < lista.length; i++) {
-    lista[i] = new Pelo();
+  radius = height/3.5;
+  strands = new Strand[count];
+  // Determine each strand
+  for (int i = 0; i < strands.length; i++) {
+    strands[i] = new Strand();
   }
-  noiseDetail(3);
+  noiseDetail(5);
+
+  rx = 0;
+  ry = 0;
+
+  minim = new Minim(this);
+  // use the getLineIn method of the Minim object to get an AudioInput
+  in = minim.getLineIn();
 }
 
-void draw() {
-  background(0);
-  
-  float rxp = (mouseX-(width/2)) * 0.005;
-  float ryp = (mouseY-(height/2)) * 0.005;
-  rx = rx*0.9 + rxp*0.1;
-  ry = ry*0.9 + ryp*0.1;
-
+void draw() 
+{
+  background(0);  
+  // Center mouse in middle and scale
+  rotationX += 0.5;
+  rotationY += 0.5;
   translate(width/2, height/2);
-  rotateY(rx);
-  rotateX(ry);
+  //Draw
   fill(0);
   noStroke();
-  sphere(radio);
+  sphere(radius);
+  // Camera
+  rotateY(rotationX);
+  rotateX(rotationY);
 
-  for (int i = 0; i < lista.length; i++) {
-    lista[i].dibujar();
+  for (int i = 0; i < strands.length; i++) {
+    strands[i].update();
+    strands[i].render();
   }
-
 }
 
 
-class Pelo
+class Strand
 {
-  float z = random(-radio, radio);
-  float phi = random(TWO_PI);
-  float largo = random(1.15, 1.2);
-  float theta = asin(z/radio);
+  float z;
+  float rotation;
+  float strandScale;
+  float theta;
 
-  Pelo() { // what's wrong with a constructor here
-    z = random(-radio, radio);
-    phi = random(TWO_PI);
-    largo = random(1.15, 1.2);
-    theta = asin(z/radio);
+  Strand() 
+  { 
+    z = random(-radius, radius);
+    rotation = random(TWO_PI);
+    strandScale = random(1.15, 1.2);
+    theta = asin(z/radius);
   }
 
-  void dibujar() {
+  /* Render the shape. Strands point towards the center */
+  void render() 
+  {
+    float x1 = radius * cos(theta) * cos(rotation);
+    float y1 = radius * cos(theta) * sin(rotation);
+    float z1 = radius * sin(theta);
 
-    float off = (noise(millis() * 0.0005, sin(phi))-0.5) * 0.3;
-    float offb = (noise(millis() * 0.0007, sin(z) * 0.01)-0.5) * 0.3;
-
-    float thetaff = theta+off;
-    float phff = phi+offb;
-    float x = radio * cos(theta) * cos(phi);
-    float y = radio * cos(theta) * sin(phi);
-    float z = radio * sin(theta);
-
-    float xo = radio * cos(thetaff) * cos(phff);
-    float yo = radio * cos(thetaff) * sin(phff);
-    float zo = radio * sin(thetaff);
-
-    float xb = xo * largo;
-    float yb = yo * largo;
-    float zb = zo * largo;
+    float x2 = x1 * strandScale;
+    float y2 = y1 * strandScale;
+    float z2 = z1 * strandScale;
 
     strokeWeight(1);
     beginShape(LINES);
     stroke(0);
-    vertex(x, y, z);
+    vertex(x1, y1, z1);
     stroke(200, 150);
-    vertex(xb, yb, zb);
+    vertex(x2, y2, z2);
     endShape();
   }
-}
 
+  void update()
+  {
+
+    radius = in.left.get(256) * 500;
+    println(radius);
+  }
+}
