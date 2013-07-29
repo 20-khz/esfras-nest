@@ -5,9 +5,15 @@
  *  
  */
 import ddf.minim.*;
+import ddf.minim.analysis.*;
+// [TODO] Without this the import breaks 
+import ddf.minim.analysis.FFT;
 
 Minim minim;
 AudioInput in;
+
+FFT fftLin;
+FFT fftLog;
 
 int count = 16000;
 Strand[] strands ;
@@ -34,6 +40,33 @@ void setup()
   minim = new Minim(this);
   // use the getLineIn method of the Minim object to get an AudioInput
   in = minim.getLineIn();
+}
+
+void setupMinim()
+{
+  minim = new Minim(this);
+  // use the getLineIn method of the Minim
+  // object to get an AudioInput
+  in = minim.getLineIn();
+  /* 
+  * create an FFT object that has a time-domain buffer the same
+  * size as jingle's sample buffer note that this needs to be a 
+  * power of two and that it means the size of the spectrum will 
+  * be 1024.
+  */
+  fftLin = new FFT(in.bufferSize(), in.sampleRate());
+  // calculate the averages by grouping frequency bands linearly. 
+  // use 30 averages.
+  fftLin.linAverages(30);
+  // create an FFT object for calculating logarithmically spaced 
+  // averages
+  fftLog = new FFT( in.bufferSize(), in.sampleRate() );
+  /* 
+  * calculate averages based on a miminum octave width of 22 Hz
+  * split each octave into three bands
+  * this should result in 30 averages
+  */
+  fftLog.logAverages(22, 3);
 }
 
 void draw() 
